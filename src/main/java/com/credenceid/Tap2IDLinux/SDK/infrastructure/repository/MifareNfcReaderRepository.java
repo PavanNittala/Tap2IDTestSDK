@@ -4,6 +4,7 @@ import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.NativeImpl.Structs
 import com.credenceid.Tap2IDLinux.SDK.application.listener.NFCTagReadListener;
 import com.credenceid.Tap2IDLinux.SDK.domain.repository.NFCReaderRepository;
 import com.credenceid.Tap2IDLinux.SDK.infrastructure.nfc.NFCReader;
+import com.credenceid.identity.iso18013.DeviceEngagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -32,9 +33,9 @@ public class MifareNfcReaderRepository implements NFCReaderRepository {
         LOG.info("Pavankn Mifare setNFCTagListener");
         nfcReader.setListener(new NFCReader.NFCListener() {
             @Override
-            public void onTagReceived(NfcTagInfo ndef) {
-                LOG.info("MifareNfcReader onTagReceived: " + ndef);
-                listener.onNfcTagRead(ndef);
+            public void onTagReceived(DeviceEngagement deviceEngagement) {
+                LOG.info("MifareNfcReader onTagReceived: " + deviceEngagement);
+                listener.onNfcTagRead(deviceEngagement);
             }
 
             @Override

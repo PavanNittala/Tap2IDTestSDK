@@ -18,8 +18,8 @@ public class GetNfcDeviceEngagementUseCaseImpl implements GetNfcDeviceEngagement
 
     public GetNfcDeviceEngagementUseCaseImpl(
             NdefRepository ndefRepository,
-            DeviceEngagementPerfLogger deviceEngagementPerfLogger
-    ) {
+            DeviceEngagementPerfLogger deviceEngagementPerfLogger) {
+
         this.ndefRepository = ndefRepository;
         this.deviceEngagementPerfLogger = deviceEngagementPerfLogger;
     }

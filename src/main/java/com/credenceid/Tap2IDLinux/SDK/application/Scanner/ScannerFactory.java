@@ -6,6 +6,7 @@ import com.credenceid.Tap2IDLinux.SDK.application.listener.NFCTagReadListener;
 import com.credenceid.Tap2IDLinux.SDK.model.Barcode;
 import com.credenceid.Tap2IDLinux.SDK.domain.usecase.ReadNfcTagUseCase;
 import com.credenceid.Tap2IDLinux.SDK.domain.usecase.ScanBarcodeUseCase;
+import com.credenceid.identity.iso18013.DeviceEngagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -103,9 +104,10 @@ public class ScannerFactory {
         @Override
         public void setListener(ScannerListener listener) {
             nfcUseCase.setListener(new NFCTagReadListener() {
+
                 @Override
-                public void onNfcTagRead(NfcTagInfo tag) {
-                    listener.onNfcTagRead(tag);
+                public void onNfcTagRead(DeviceEngagement deviceEngagement) {
+                    listener.onNfcTagRead(deviceEngagement);
                 }
 
                 @Override

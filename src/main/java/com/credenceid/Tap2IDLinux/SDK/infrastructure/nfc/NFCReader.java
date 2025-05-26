@@ -4,17 +4,25 @@ import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.NativeImpl.Structs
 import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.data.NdefRepositoryImpl;
 import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.helpers.*;
 
+import com.credenceid.identity.iso18013.DeviceEngagement;
 import com.credenceid.identity.transactionPerf.DeviceEngagementPerfLogger;
+import io.reactivex.rxjava3.disposables.Disposable;
+import io.reactivex.rxjava3.schedulers.Schedulers;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 public class NFCReader {
     private static final Logger LOG = LoggerFactory.getLogger(NFCReader.class);
     private NFCListener listener;
-    public static NfcTagInfo currentIsoDepTag = new NfcTagInfo();
+    private Disposable subscription; // To manage Flowable subscription
+    private NfcCommunication nfcCommunication; // For cleanup
+    private final AtomicBoolean isRunning = new AtomicBoolean(false);
 
     public interface NFCListener {
-        void onTagReceived(NfcTagInfo ndef);
+        void onTagReceived(DeviceEngagement deviceEngagement);
         void onTagDeparted();
         void onError(String message);
     }
@@ -24,27 +32,9 @@ public class NFCReader {
         this.listener = listener;
     }
 
-
     public void start(){
-        LOG.info("Pavankn NFC Start");
         DeviceEngagementPerfLogger perfLogger = DeviceEngagementPerfLogger.getInstance();
-        NfcCommunication nfcCommunication = new LinuxNfcCommunication(perfLogger, new NFCListener() {
-            @Override
-            public void onTagReceived(NfcTagInfo ndef) {
-                LOG.info("NFCReader onTagReceived");
-                listener.onTagReceived(ndef);
-            }
-
-            @Override
-            public void onTagDeparted() {
-                LOG.info("NFCReader onTagDeparted");
-            }
-
-            @Override
-            public void onError(String message) {
-                LOG.info("NFCReader onError");
-            }
-        });
+        nfcCommunication = new LinuxNfcCommunication(perfLogger);
         ApduCommunicationHelper apduCommunicationHelper = new ApduCommunicationHelperImpl(nfcCommunication);
         NdefCommunicationHelper ndefCommunicationHelper = new NdefCommunicationHelperImpl(apduCommunicationHelper);
         NdefRepositoryImpl ndefRepositoryImpl = new NdefRepositoryImpl(ndefCommunicationHelper, perfLogger);
@@ -52,31 +42,41 @@ public class NFCReader {
         subscribeToNfc(nfcDeviceEngagementUseCaseImpl);
     }
 
-    private static void subscribeToNfc(GetNfcDeviceEngagementUseCaseImpl useCase) {
+    /**
+     *
+     * @param useCase
+     */
+    private void subscribeToNfc(GetNfcDeviceEngagementUseCaseImpl useCase) {
 
-        LOG.info("Pavankn subscribeToNfc");
-        useCase.invoke().subscribe(deviceEngagement -> {
+        LOG.info("Listen to NFC");
+        subscription = useCase.invoke().subscribe(deviceEngagement -> {
             if (deviceEngagement != null) {
-                LOG.info("NFC DeviceEngagement: " + deviceEngagement);
+                LOG.info("NFC DeviceEngagement: {}", deviceEngagement);
+                if (listener != null) {
+                    listener.onTagReceived(deviceEngagement);
+                    // Retry after delay
+                    Schedulers.io().scheduleDirect(() -> subscribeToNfc(useCase), 1, TimeUnit.SECONDS);
+                }
             } else {
-                LOG.info("NFC DeviceEngagement Null");
+                LOG.info("NFC DeviceEngagement Null (Tag Departed)");
+                if (listener != null) {
+                    listener.onTagDeparted();
+                }
             }
-            // Restart the flow after completion
-            //subscribeToNfc(useCase);
         }, throwable -> {
             LOG.error("NFC DeviceEngagement Failed", throwable);
-            // Optional: delay before retrying to avoid tight error loop
-            try {
-                Thread.sleep(1000);
-            } catch (InterruptedException e) {
-                Thread.currentThread().interrupt();
+            if (listener != null) {
+                listener.onError(throwable.getMessage());
             }
-            //subscribeToNfc(useCase);
+            // Retry after delay
+            Schedulers.io().scheduleDirect(() -> subscribeToNfc(useCase), 1, TimeUnit.SECONDS);
         });
+
     }
 
-
     public void stop() {
+        LOG.info("NFC Stop");
+        isRunning.set(false);
     }
 
 }

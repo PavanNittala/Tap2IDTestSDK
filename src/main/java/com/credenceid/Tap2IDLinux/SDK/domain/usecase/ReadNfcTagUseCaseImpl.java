@@ -3,6 +3,7 @@ package com.credenceid.Tap2IDLinux.SDK.domain.usecase;
 import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.NativeImpl.Structs.NfcTagInfo;
 import com.credenceid.Tap2IDLinux.SDK.application.listener.NFCTagReadListener;
 import com.credenceid.Tap2IDLinux.SDK.domain.repository.NFCReaderRepository;
+import com.credenceid.identity.iso18013.DeviceEngagement;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -28,10 +29,10 @@ public class ReadNfcTagUseCaseImpl implements ReadNfcTagUseCase {
     public void setListener(NFCTagReadListener listener) {
        repository.setNFCTagListener(new NFCTagReadListener() {
            @Override
-           public void onNfcTagRead(NfcTagInfo tag) {
-               LOG.info("Pavankn onNfcTagRead: " + tag);
+           public void onNfcTagRead(DeviceEngagement deviceEngagement) {
+               LOG.info("Pavankn onNfcTagRead: " + deviceEngagement);
                if (listener != null) {
-                   listener.onNfcTagRead(tag);
+                   listener.onNfcTagRead(deviceEngagement);
                }
            }
 

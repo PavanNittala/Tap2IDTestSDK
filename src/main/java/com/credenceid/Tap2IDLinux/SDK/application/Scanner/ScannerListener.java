@@ -1,9 +1,10 @@
 package com.credenceid.Tap2IDLinux.SDK.application.Scanner;
 
 import com.credenceid.Tap2IDLinux.SDK.infrastructure.core.Nfc.NativeImpl.Structs.NfcTagInfo;
+import com.credenceid.identity.iso18013.DeviceEngagement;
 
 public interface ScannerListener {
     void onBarcodeScanned(String barcode);
-    void onNfcTagRead(NfcTagInfo tagId);
+    void onNfcTagRead(DeviceEngagement deviceEngagement);
     void onError(String message);
 }
